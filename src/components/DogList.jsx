@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { TreeSelect } from "antd";
-import { Card } from "antd";
+import { TreeSelect, Card, Spin } from "antd";
 import { baseURL, allBreedsURL } from "../utils/endpoints";
 import { handleTreeData } from "../utils/handlers";
 import { gridStyle } from "./styles";
 import axios from "axios";
+import { v1 } from "uuid";
 
 const DogList = () => {
   const [allBreeds, setAllBreeds] = useState([]);
@@ -21,14 +21,12 @@ const DogList = () => {
       });
   }, []);
 
-  const onChange = (breeds) => {
+  const handleOnChange = (breeds) => {
     console.log("onChange ", breeds);
-    const randomId = Math.floor(Math.random() * Math.floor(Math.random() * Date.now()));
     const lastSelectedBreed = breeds.slice(-1);
     const subBreedValues = [].concat(...Object.values(allBreeds));
     const itsSubBreed = subBreedValues.includes(lastSelectedBreed.toString());
     const breedPics = [];
-
     if (itsSubBreed) {
       const originalBreed = Object.entries(allBreeds).find(([key, value]) => value.includes(lastSelectedBreed.toString()));
       const subBreedsEndpoint = `${originalBreed[0]}/${lastSelectedBreed.toString()}/images`
@@ -37,7 +35,7 @@ const DogList = () => {
         .then((res) => {
           const breedImages = res.data.message;
           for (let image of breedImages) {
-            breedPics.push({ id: randomId, dog: image });
+            breedPics.push({ id: v1(), dog: image, breed: lastSelectedBreed.toString() });
           }
           setValuesByBreed((prevBreedPics) => [...prevBreedPics, ...breedPics]);
         })
@@ -51,7 +49,7 @@ const DogList = () => {
         .then((res) => {
           const breedImages = res.data.message;
           for (let image of breedImages) {
-            breedPics.push({ id: randomId, dog: image });
+            breedPics.push({ id: v1(), dog: image, breed: lastSelectedBreed.toString() });
           }
           setValuesByBreed((prevBreedPics) => [...prevBreedPics, ...breedPics]);
         })
@@ -59,12 +57,19 @@ const DogList = () => {
           console.log(err);
         });
     }
+
   };
+  
+  const handleDelete = (breeds) => {
+    setValuesByBreed(valuesByBreed.filter(x => {
+       return breeds.includes(x.breed.toString())     
+   }))
+  }
+ 
 
   const { SHOW_PARENT } = TreeSelect;
 
   const tProps = {
-    onChange,
     treeCheckable: true,
     showCheckedStrategy: SHOW_PARENT,
     placeholder: "Please select",
@@ -76,7 +81,7 @@ const DogList = () => {
 
   return (
     <>
-      <TreeSelect {...tProps} treeData={handleTreeData(allBreeds)} />
+      <TreeSelect {...tProps} onChange={(e) => {handleOnChange(e);  handleDelete(e)}}  treeData={handleTreeData(allBreeds)} />
       <Card>
         {valuesByBreed.map((x, i) => {
           return (
