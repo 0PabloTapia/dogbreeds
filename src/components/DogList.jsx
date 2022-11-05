@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-import { TreeSelect } from "antd";
-import { Card } from "antd";
+import { TreeSelect, Card, Spin } from "antd";
+import { baseURL, allBreedsURL } from "../utils/endpoints";
+import { handleTreeData } from "../utils/handlers";
+import { gridStyle } from "./styles";
 import axios from "axios";
+import { v1 } from "uuid";
 
 const DogList = () => {
   const [allBreeds, setAllBreeds] = useState([]);
   const [valuesByBreed, setValuesByBreed] = useState([]);
 
   useEffect(() => {
-    const url = "https://dog.ceo/api/breeds/list/all";
     axios
-      .get(url)
+      .get(allBreedsURL)
       .then((res) => {
         setAllBreeds(res.data.message);
       })
@@ -19,20 +21,21 @@ const DogList = () => {
       });
   }, []);
 
-  const onChange = (breeds) => {
+  const handleOnChange = (breeds) => {
     console.log("onChange ", breeds);
-    const randomId = Math.floor(Math.random() * Math.floor(Math.random() * Date.now()));
     const lastSelectedBreed = breeds.slice(-1);
     const subBreedValues = [].concat(...Object.values(allBreeds));
     const itsSubBreed = subBreedValues.includes(lastSelectedBreed.toString());
     const breedPics = [];
     if (itsSubBreed) {
+      const originalBreed = Object.entries(allBreeds).find(([key, value]) => value.includes(lastSelectedBreed.toString()));
+      const subBreedsEndpoint = `${originalBreed[0]}/${lastSelectedBreed.toString()}/images`
       axios
-        .get(`https://dog.ceo/api/breed/${lastSelectedBreed}/images`)
+        .get(baseURL + subBreedsEndpoint)
         .then((res) => {
           const breedImages = res.data.message;
           for (let image of breedImages) {
-            breedPics.push({ id: randomId, dog: image });
+            breedPics.push({ id: v1(), dog: image, breed: lastSelectedBreed.toString() });
           }
           setValuesByBreed((prevBreedPics) => [...prevBreedPics, ...breedPics]);
         })
@@ -40,13 +43,13 @@ const DogList = () => {
           console.log(err);
         });
     } else {
-      const breedsURL = `https://dog.ceo/api/breed/${lastSelectedBreed}/images`;
+      const breedEndpoint = `${lastSelectedBreed}/images`
       axios
-        .get(breedsURL)
+        .get(baseURL + breedEndpoint)
         .then((res) => {
           const breedImages = res.data.message;
           for (let image of breedImages) {
-            breedPics.push({ id: randomId, dog: image });
+            breedPics.push({ id: v1(), dog: image, breed: lastSelectedBreed.toString() });
           }
           setValuesByBreed((prevBreedPics) => [...prevBreedPics, ...breedPics]);
         })
@@ -54,14 +57,19 @@ const DogList = () => {
           console.log(err);
         });
     }
-  };
 
-  console.log("values", allBreeds);
+  };
+  
+  const handleDelete = (breeds) => {
+    setValuesByBreed(valuesByBreed.filter(x => {
+       return breeds.includes(x.breed.toString())     
+   }))
+  }
+ 
 
   const { SHOW_PARENT } = TreeSelect;
 
   const tProps = {
-    onChange,
     treeCheckable: true,
     showCheckedStrategy: SHOW_PARENT,
     placeholder: "Please select",
@@ -69,34 +77,11 @@ const DogList = () => {
       width: "30%",
     },
   };
-
-  const gridStyle = {
-    width: "20%",
-    padding: "4rem 2rem 4rem 2rem",
-    marginTop: "1rem",
-    marginLeft: "4.5rem",
-    textAlign: "center",
-    backgroundColor: "#DE2151",
-  };
-
-  const handleTreeData = () => {
-    return Object.entries(allBreeds).map(([breed, subBreed], i) => ({
-      title: breed,
-      value: breed,
-      children: subBreed.map((x, i) => {
-        return {
-          title: x,
-          value: x,
-        };
-      }),
-    }));
-  };
-
-  console.log('byBreed', valuesByBreed)
+  
 
   return (
     <>
-      <TreeSelect {...tProps} treeData={handleTreeData()} />
+      <TreeSelect {...tProps} onChange={(e) => {handleOnChange(e);  handleDelete(e)}}  treeData={handleTreeData(allBreeds)} />
       <Card>
         {valuesByBreed.map((x, i) => {
           return (
