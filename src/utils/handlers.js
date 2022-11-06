@@ -11,4 +11,10 @@ const handleTreeData = (allBreeds) => {
     }));
   };
 
-  export { handleTreeData }
+  const handleDelete = (breeds, setValuesByBreed, valuesByBreed) => {
+    setValuesByBreed(valuesByBreed.filter(x => {
+       return breeds.includes(x.breed.toString())     
+   }))
+  }
+
+  export { handleTreeData, handleDelete }
