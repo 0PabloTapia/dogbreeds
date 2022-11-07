@@ -4,7 +4,7 @@ const EmptyValues = () => {
   return (
     <>
     <div style={{ marginTop: '5rem' }}>
-      <h1 style={{ color: '#73c4ef', fontWeight: 'bold' }} >There seems to be no dogs wandering here :( </h1>
+      <h1 style={{ color: '#73c4ef', fontWeight: '100' }} >There seems to be no dogs wandering here :( </h1>
       <Doggie />
     </div>
     </>
